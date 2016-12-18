@@ -10,7 +10,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"net/http/cookiejar"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -22,7 +21,7 @@ import (
 )
 
 var (
-	cookieJar, _ = cookiejar.New(nil)
+	cookieJar = NewCookies()
 
 	filterV = regexp.MustCompile(`<script type="text/javascript">window._sharedData = (.+);</script>`)
 	sizeR   = regexp.MustCompile(`/[a-z][0-9]+x[0-9]+`)
