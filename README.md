@@ -10,6 +10,18 @@ install
 Usage
 ------
 
+	xig [options] {username}
+
+	Options:
+	  -a    Get all data
+	  -c int
+			concurrency nums (default cpuNums*4)
+	  -d int
+			Delay to start, in seconds
+	  -f    Find deleted
+	  -i    Quick look recently data
+	  -u    Login someone to see private data
+
 To fetch recently img(12), avatar and content
 
     xig {username}

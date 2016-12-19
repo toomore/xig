@@ -29,7 +29,7 @@ var (
 	filterV = regexp.MustCompile(`<script type="text/javascript">window._sharedData = (.+);</script>`)
 	sizeR   = regexp.MustCompile(`/[a-z][0-9]+x[0-9]+`)
 
-	delay     = flag.Int64("d", 0, "Delay to start")
+	delay     = flag.Int64("d", 0, "Delay to start, in seconds")
 	finddel   = flag.Bool("f", false, "Find deleted")
 	getAll    = flag.Bool("a", false, "Get all data")
 	loginuser = flag.Bool("u", false, "Login someone to see private data")
@@ -462,7 +462,7 @@ func main() {
 		}
 	} else {
 		fmt.Println("xig [options] {username}")
-		fmt.Println("Options:")
+		fmt.Println("\nOptions:")
 		flag.PrintDefaults()
 	}
 }
