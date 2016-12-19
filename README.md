@@ -35,7 +35,8 @@ To find some deleted content
     xig -f {username}
 
 Some users turn to private account, using `-u` to login user account for fetch
-private data. (required setting environment variables in `IGUSER`, `IGPASS`)
+private data. (required setting environment variables in `IGUSER`, `IGPASS`, and
+cookies gob file will save as `cookies.gob`)
 
     xig -u {username}
 
