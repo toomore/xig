@@ -36,7 +36,7 @@ To find some deleted content
 
 Some users turn to private account, using `-u` to login user account for fetch
 private data. (required setting environment variables in `IGUSER`, `IGPASS`, and
-cookies gob file will save as `cookies.gob`)
+cookies file will save as `cookies.gob`)
 
     xig -u {username}
 
@@ -62,7 +62,8 @@ Note
 -----
 
 * All images will try to fetch original size.
-* Private user not work.
+* Private user need setting `IGUSER`, `IGPASS` and using `-u`.
+  Cookies file will save as `cookies.gob`
 * Content's readable date is in `RFC3339` format.
 * instagram won't to ban ip, may CDN doesn't check.
 * `xig`'s code base are not pretty, I will make it pretty :)
@@ -73,3 +74,7 @@ Tips
 For crontab, every 1m to fetch
 
     */1 * * * * cd ~/{some folder}; ({$go_bin_path}/xig {username} 2>&1) >> ./{username}.log
+
+For crontab, using `-d` for delay fetch.
+
+    */1 * * * * cd ~/{some folder}; ({$go_bin_path}/xig -d 30 {username} 2>&1) >> ./{username}.log
