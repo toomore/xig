@@ -24,6 +24,7 @@ const userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:50.0) Gecko/
 
 var (
 	cookieJar = NewCookies()
+	client    *http.Client
 
 	filterV = regexp.MustCompile(`<script type="text/javascript">window._sharedData = (.+);</script>`)
 	sizeR   = regexp.MustCompile(`/[a-z][0-9]+x[0-9]+`)
@@ -38,9 +39,6 @@ var (
 
 func fetch(user string) *http.Response {
 	log.Printf("Fetch data from `%s`\n", user)
-	client := &http.Client{
-		Jar: cookieJar,
-	}
 
 	req, err := http.NewRequest(
 		"GET", fmt.Sprintf(`https://www.instagram.com/%s/?hl=zh-tw`, user), nil)
@@ -105,15 +103,18 @@ func downloadAvatar(user string, path string, wg *sync.WaitGroup) {
 	)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Println("[downloadAvatar]", err)
 	}
 	log.Println(fmt.Sprintf("Saved avatar `%s`, `%s`", user, path))
 }
 
 func downloadAndSave(url string, path string, withHex bool) error {
-	data, err := http.Get(url)
+	req, _ := http.NewRequest("GET", url, nil)
+	req.Header.Set("User-agent", userAgent)
+	data, err := client.Do(req)
+
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	body, err := ioutil.ReadAll(data.Body)
 
@@ -166,18 +167,6 @@ func fetchAll(id string, username string, endCursor string, count int) {
 }
  }`, id, endCursor, count))
 	v.Set("ref", "users::show")
-
-	client := &http.Client{
-		Transport: &http.Transport{
-			Proxy: http.ProxyFromEnvironment,
-			DialContext: (&net.Dialer{
-				Timeout:   0,
-				KeepAlive: 0,
-			}).DialContext,
-			TLSHandshakeTimeout: 1 * time.Second,
-		},
-		Jar: cookieJar,
-	}
 
 	req, err := http.NewRequest("POST", "https://www.instagram.com/query/", strings.NewReader(v.Encode()))
 	if err != nil {
@@ -375,8 +364,6 @@ func findContentJSON(username string) {
 	wg.Add(len(allJSON))
 	starttime := time.Now()
 
-	client := &http.Client{}
-
 	for i, path := range allJSON {
 		go func(i int, path string) {
 			defer wg.Done()
@@ -431,6 +418,20 @@ func LoginOnce(user, pass string) {
 	if !cookieJar.Loads() {
 		login(cookieJar, user, pass)
 		cookieJar.Dumps()
+	}
+}
+
+func init() {
+	client = &http.Client{
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   0,
+				KeepAlive: 0,
+			}).DialContext,
+			TLSHandshakeTimeout: 1 * time.Second,
+		},
+		Jar: cookieJar,
 	}
 }
 

@@ -13,7 +13,11 @@ func login(cj http.CookieJar, user, pass string) {
 	client := &http.Client{
 		Jar: cj,
 	}
-	fq, _ := client.Get("https://www.instagram.com/")
+	freq, _ := http.NewRequest("GET", "https://www.instagram.com/", nil)
+	freq.Header.Set("Origin", "https://www.instagram.com")
+	freq.Header.Set("User-agent", userAgent)
+	fq, _ := client.Do(freq)
+
 	var csrftoken string
 	for _, v := range fq.Cookies() {
 		if v.Name == "csrftoken" {
