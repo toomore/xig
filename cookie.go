@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"sync"
+	"time"
 )
 
 // GOBPATH is path to save gob file
@@ -71,36 +72,57 @@ func (c *Cookies) All() {
 }
 
 // Dumps data
-func (c *Cookies) Dumps() {
+func (c *Cookies) Dumps() bool {
 	if _, err := os.Stat(GOBPATH); err != nil {
 		if os.IsNotExist(err) {
 			os.Create(GOBPATH)
+		} else {
+			log.Println("[Dumps]", err)
+			return false
 		}
 	}
 	file, err := os.OpenFile(GOBPATH, os.O_WRONLY, os.ModePerm)
 	defer file.Close()
 
 	if err != nil {
-		log.Fatal("[Dumps]", err)
+		log.Println("[Dumps]", err)
+		return false
 	}
 
 	enc := gob.NewEncoder(file)
 	enc.Encode(c.entry)
+
+	return true
 }
 
 // Loads data from files
-func (c *Cookies) Loads() {
+func (c *Cookies) Loads() bool {
 	if _, err := os.Stat(GOBPATH); err != nil {
 		log.Println("[Load cookies file]", err)
-		return
+		return false
 	}
 	file, err := os.OpenFile(GOBPATH, os.O_RDONLY, os.ModePerm)
 	defer file.Close()
 
 	if err != nil {
-		log.Fatal("[Loads]", err)
+		log.Println("[Loads]", err)
+		return false
 	}
 
 	dec := gob.NewDecoder(file)
 	dec.Decode(&c.entry)
+
+	return true
+}
+
+// CheckSessionID to check `sessionid` is verified or not
+func (c *Cookies) CheckSessionID(url *url.URL) bool {
+	cookie := c.entry[url.Host]
+	if _, ok := cookie["sessionid"]; !ok {
+		return false
+	}
+	if cookie["sessionid"].Expires.Before(time.Now()) {
+		return false
+	}
+	return true
 }
