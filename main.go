@@ -20,6 +20,8 @@ import (
 	"time"
 )
 
+const userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:50.0) Gecko/20100101 Firefox/50.0"
+
 var (
 	cookieJar = NewCookies()
 
@@ -39,7 +41,15 @@ func fetch(user string) *http.Response {
 	client := &http.Client{
 		Jar: cookieJar,
 	}
-	resp, err := client.Get(fmt.Sprintf(`https://www.instagram.com/%s/?hl=zh-tw`, user))
+
+	req, err := http.NewRequest(
+		"GET", fmt.Sprintf(`https://www.instagram.com/%s/?hl=zh-tw`, user), nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	req.Header.Set("User-agent", userAgent)
+	resp, err := client.Do(req)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -175,6 +185,7 @@ func fetchAll(id string, username string, endCursor string, count int) {
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Referer", fmt.Sprintf("https://www.instagram.com/%s/", username))
+	req.Header.Set("User-agent", userAgent)
 
 	u, _ := url.Parse("https://www.instagram.com/")
 	for _, v := range cookieJar.Cookies(u) {
@@ -363,6 +374,9 @@ func findContentJSON(username string) {
 
 	wg.Add(len(allJSON))
 	starttime := time.Now()
+
+	client := &http.Client{}
+
 	for i, path := range allJSON {
 		go func(i int, path string) {
 			defer wg.Done()
@@ -376,7 +390,14 @@ func findContentJSON(username string) {
 			var node Node
 			json.Unmarshal(data, &node)
 
-			resp, err := http.Get(fmt.Sprintf("https://www.instagram.com/p/%s", node.Code))
+			req, err := http.NewRequest("GET",
+				fmt.Sprintf("https://www.instagram.com/p/%s", node.Code), nil)
+			if err != nil {
+				log.Fatal(err)
+			}
+			req.Header.Set("User-agent", userAgent)
+
+			resp, err := client.Do(req)
 			if err == nil {
 				if resp.StatusCode > 300 || resp.StatusCode < 200 {
 					result[i] = fmt.Sprintf("%d => %d %s", resp.StatusCode, node.Date, node.Code)

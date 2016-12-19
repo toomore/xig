@@ -31,7 +31,7 @@ func login(cj http.CookieJar, user, pass string) {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Origin", "https://www.instagram.com")
 	req.Header.Set("Referer", "https://www.instagram.com/")
-	req.Header.Set("User-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.28 Safari/537.36")
+	req.Header.Set("User-agent", userAgent)
 	req.Header.Set("x-csrftoken", csrftoken)
 	//req.Header.Set("x-instagram-ajax", "1")
 	//req.Header.Set("x-requested-with", "XMLHttpRequest")
