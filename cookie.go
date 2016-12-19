@@ -1,11 +1,17 @@
 package main
 
 import (
+	"encoding/gob"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"sync"
 )
+
+// GOBPATH is path to save gob file
+const GOBPATH = "./cookies.gob"
 
 // Cookies struct
 type Cookies struct {
@@ -52,4 +58,49 @@ func (c *Cookies) Cookies(u *url.URL) []*http.Cookie {
 		}
 	}
 	return nil
+}
+
+// All show all cookies
+func (c *Cookies) All() {
+	for k, v := range c.entry {
+		fmt.Println("Host:", k)
+		for ck, cv := range v {
+			fmt.Printf("[%s] %s\n", ck, cv)
+		}
+	}
+}
+
+// Dumps data
+func (c *Cookies) Dumps() {
+	if _, err := os.Stat(GOBPATH); err != nil {
+		if os.IsNotExist(err) {
+			os.Create(GOBPATH)
+		}
+	}
+	file, err := os.OpenFile(GOBPATH, os.O_WRONLY, os.ModePerm)
+	defer file.Close()
+
+	if err != nil {
+		log.Fatal("[Dumps]", err)
+	}
+
+	enc := gob.NewEncoder(file)
+	enc.Encode(c.entry)
+}
+
+// Loads data from files
+func (c *Cookies) Loads() {
+	if _, err := os.Stat(GOBPATH); err != nil {
+		log.Println("[Load cookies file]", err)
+		return
+	}
+	file, err := os.OpenFile(GOBPATH, os.O_RDONLY, os.ModePerm)
+	defer file.Close()
+
+	if err != nil {
+		log.Fatal("[Loads]", err)
+	}
+
+	dec := gob.NewDecoder(file)
+	dec.Decode(&c.entry)
 }
