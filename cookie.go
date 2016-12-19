@@ -73,6 +73,9 @@ func (c *Cookies) All() {
 
 // Dumps data
 func (c *Cookies) Dumps() bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	if _, err := os.Stat(GOBPATH); err != nil {
 		if os.IsNotExist(err) {
 			os.Create(GOBPATH)
@@ -97,6 +100,9 @@ func (c *Cookies) Dumps() bool {
 
 // Loads data from files
 func (c *Cookies) Loads() bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	if _, err := os.Stat(GOBPATH); err != nil {
 		log.Println("[Load cookies file]", err)
 		return false
