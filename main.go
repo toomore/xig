@@ -24,43 +24,21 @@ import (
 const userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:50.0) Gecko/20100101 Firefox/50.0"
 
 var (
-	cookieJar = NewCookies()
 	client    *http.Client
+	cookieJar = NewCookies()
+	trace     *httptrace.ClientTrace
 
 	filterV = regexp.MustCompile(`<script type="text/javascript">window._sharedData = (.+);</script>`)
 	sizeR   = regexp.MustCompile(`/[a-z][0-9]+x[0-9]+`)
 
-	delay     = flag.Int64("d", 0, "Delay to start, in seconds")
-	finddel   = flag.Bool("f", false, "Find deleted")
-	getAll    = flag.Bool("a", false, "Get all data")
-	loginuser = flag.Bool("u", false, "Login someone to see private data")
-	ncpu      = flag.Int("c", runtime.NumCPU()*20, "concurrency nums")
-	qLook     = flag.Bool("i", false, "Quick look recently data")
+	delay         = flag.Int64("d", 0, "Delay to start, in seconds")
+	finddel       = flag.Bool("f", false, "Find deleted")
+	getAll        = flag.Bool("a", false, "Get all data")
+	loginuser     = flag.Bool("u", false, "Login someone to see private data")
+	ncpu          = flag.Int("c", runtime.NumCPU()*20, "concurrency nums")
+	qLook         = flag.Bool("i", false, "Quick look recently data")
+	showHTTPTrace = flag.Bool("t", false, "Show httptrace info")
 )
-
-var trace = &httptrace.ClientTrace{
-	DNSStart: func(dnsInfo httptrace.DNSStartInfo) {
-		log.Printf("[Trace] DNS Info: %+v\n", dnsInfo)
-	},
-	DNSDone: func(dnsInfo httptrace.DNSDoneInfo) {
-		log.Printf("[Trace] DNS Info: %+v\n", dnsInfo)
-	},
-	GetConn: func(hostPort string) {
-		log.Println("[Trace]", hostPort)
-	},
-	GotConn: func(connInfo httptrace.GotConnInfo) {
-		log.Printf("[Trace] Got Info: %+v\n", connInfo)
-	},
-	GotFirstResponseByte: func() {
-		log.Println("[Trace] Got First Response Byte")
-	},
-	ConnectStart: func(netword, addr string) {
-		log.Println("[Trace] ConnectStart:", netword, addr)
-	},
-	ConnectDone: func(netword, addr string, err error) {
-		log.Println("[Trace] ConnectDone:", netword, addr, err)
-	},
-}
 
 func fetch(user string) *http.Response {
 	log.Printf("Fetch data from `%s`\n", user)
@@ -464,9 +442,40 @@ func init() {
 	}
 }
 
+func initHTTPTrace() {
+	if *showHTTPTrace {
+		trace = &httptrace.ClientTrace{
+			DNSStart: func(dnsInfo httptrace.DNSStartInfo) {
+				log.Printf("[Trace] DNS Info: %+v\n", dnsInfo)
+			},
+			DNSDone: func(dnsInfo httptrace.DNSDoneInfo) {
+				log.Printf("[Trace] DNS Info: %+v\n", dnsInfo)
+			},
+			GetConn: func(hostPort string) {
+				log.Println("[Trace]", hostPort)
+			},
+			GotConn: func(connInfo httptrace.GotConnInfo) {
+				log.Printf("[Trace] Got Info: %+v\n", connInfo)
+			},
+			GotFirstResponseByte: func() {
+				log.Println("[Trace] Got First Response Byte")
+			},
+			ConnectStart: func(netword, addr string) {
+				log.Println("[Trace] ConnectStart:", netword, addr)
+			},
+			ConnectDone: func(netword, addr string, err error) {
+				log.Println("[Trace] ConnectDone:", netword, addr, err)
+			},
+		}
+	} else {
+		trace = &httptrace.ClientTrace{}
+	}
+}
+
 func main() {
 	flag.Parse()
 	if len(flag.Args()) > 0 {
+		initHTTPTrace()
 		if *loginuser {
 			LoginOnce(os.Getenv("IGUSER"), os.Getenv("IGPASS"))
 			u, _ := url.Parse("https://www.instagram.com/")

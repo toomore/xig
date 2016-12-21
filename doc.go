@@ -23,6 +23,7 @@ usage list
 			Delay to start, in seconds
 	  -f    Find deleted
 	  -i    Quick look recently data
+	  -t    Show httptrace info
 	  -u    Login someone to see private data
 
 To fetch recently img(12), avatar and content
