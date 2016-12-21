@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/http/httptrace"
 	"net/url"
 	"strings"
 )
@@ -16,6 +17,8 @@ func login(cj http.CookieJar, user, pass string) {
 	freq, _ := http.NewRequest("GET", "https://www.instagram.com/", nil)
 	freq.Header.Set("Origin", "https://www.instagram.com")
 	freq.Header.Set("User-agent", userAgent)
+
+	freq = freq.WithContext(httptrace.WithClientTrace(freq.Context(), trace))
 	fq, _ := client.Do(freq)
 
 	var csrftoken string
@@ -40,6 +43,8 @@ func login(cj http.CookieJar, user, pass string) {
 	//req.Header.Set("x-instagram-ajax", "1")
 	//req.Header.Set("x-requested-with", "XMLHttpRequest")
 	u, _ := url.Parse("https://www.instagram.com/")
+
+	req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
 	resp, _ := client.Do(req)
 	text, _ := ioutil.ReadAll(resp.Body)
 	log.Printf("Response: %s\n", text)

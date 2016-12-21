@@ -10,6 +10,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/http/httptrace"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -37,6 +38,30 @@ var (
 	qLook     = flag.Bool("i", false, "Quick look recently data")
 )
 
+var trace = &httptrace.ClientTrace{
+	DNSStart: func(dnsInfo httptrace.DNSStartInfo) {
+		log.Printf("[Trace] DNS Info: %+v\n", dnsInfo)
+	},
+	DNSDone: func(dnsInfo httptrace.DNSDoneInfo) {
+		log.Printf("[Trace] DNS Info: %+v\n", dnsInfo)
+	},
+	GetConn: func(hostPort string) {
+		log.Println("[Trace]", hostPort)
+	},
+	GotConn: func(connInfo httptrace.GotConnInfo) {
+		log.Printf("[Trace] Got Info: %+v\n", connInfo)
+	},
+	GotFirstResponseByte: func() {
+		log.Println("[Trace] Got First Response Byte")
+	},
+	ConnectStart: func(netword, addr string) {
+		log.Println("[Trace] ConnectStart:", netword, addr)
+	},
+	ConnectDone: func(netword, addr string, err error) {
+		log.Println("[Trace] ConnectDone:", netword, addr, err)
+	},
+}
+
 func fetch(user string) *http.Response {
 	log.Printf("Fetch data from `%s`\n", user)
 
@@ -47,6 +72,7 @@ func fetch(user string) *http.Response {
 	}
 
 	req.Header.Set("User-agent", userAgent)
+	req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Fatal(err)
@@ -111,6 +137,7 @@ func downloadAvatar(user string, path string, wg *sync.WaitGroup) {
 func downloadAndSave(url string, path string, withHex bool) error {
 	req, _ := http.NewRequest("GET", url, nil)
 	req.Header.Set("User-agent", userAgent)
+	req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
 	data, err := client.Do(req)
 
 	if err != nil {
@@ -184,6 +211,7 @@ func fetchAll(id string, username string, endCursor string, count int) {
 		}
 	}
 
+	req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Fatal(err)
@@ -384,6 +412,7 @@ func findContentJSON(username string) {
 			}
 			req.Header.Set("User-agent", userAgent)
 
+			req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
 			resp, err := client.Do(req)
 			if err == nil {
 				if resp.StatusCode > 300 || resp.StatusCode < 200 {
