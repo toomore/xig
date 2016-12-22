@@ -235,7 +235,7 @@ func fetchAll(id string, username string, endCursor string, count int) {
 	close(queueCon)
 }
 
-func saveDiffNodeContent(orgNode Node, node Node) string {
+func diffNodeContent(orgNode Node, node Node) string {
 	orgHash := md5.New()
 	io.WriteString(orgHash, orgNode.Caption)
 	nodeHash := md5.New()
@@ -265,7 +265,7 @@ func saveNodeContent(node Node, user string, wg *sync.WaitGroup) {
 		orgNodeFile, _ := ioutil.ReadFile(fmt.Sprintf(basePath, "", "json"))
 		var orgNode Node
 		json.Unmarshal(orgNodeFile, &orgNode)
-		saveDiff = saveDiffNodeContent(orgNode, node)
+		saveDiff = diffNodeContent(orgNode, node)
 		if saveDiff != "" {
 			if err := ioutil.WriteFile(
 				fmt.Sprintf(basePath, fmt.Sprintf("_%s", saveDiff), "json"), jsonStr, 0644); err != nil {

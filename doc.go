@@ -18,7 +18,7 @@ usage list
 	Options:
 	  -a    Get all data
 	  -c int
-			concurrency nums (default cpuNums*4)
+			concurrency nums (default cpuNums*20)
 	  -d int
 			Delay to start, in seconds
 	  -f    Find deleted
