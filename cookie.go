@@ -17,7 +17,7 @@ const GOBPATH = "./cookies.gob"
 // Cookies struct
 type Cookies struct {
 	entry map[string]map[string]*http.Cookie
-	mu    sync.Mutex
+	mu    sync.RWMutex
 }
 
 // NewCookies a Cookies
