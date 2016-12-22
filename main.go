@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/md5"
 	"encoding/json"
 	"flag"
@@ -234,6 +235,17 @@ func fetchAll(id string, username string, endCursor string, count int) {
 	close(queueCon)
 }
 
+func saveDiffNodeContent(orgNode Node, node Node) string {
+	orgHash := md5.New()
+	io.WriteString(orgHash, orgNode.Caption)
+	nodeHash := md5.New()
+	io.WriteString(nodeHash, node.Caption)
+	if !bytes.Equal(orgHash.Sum(nil), nodeHash.Sum(nil)) {
+		return fmt.Sprintf("%x", nodeHash.Sum(nil))
+	}
+	return ""
+}
+
 func saveNodeContent(node Node, user string, wg *sync.WaitGroup) {
 	runtime.Gosched()
 	defer wg.Done()
@@ -242,24 +254,48 @@ func saveNodeContent(node Node, user string, wg *sync.WaitGroup) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	basePath := fmt.Sprintf("./%s/content/%d_%s_%s.%%s", user, node.Date, node.Code, node.ID)
-	if _, err := os.Stat(fmt.Sprintf(basePath, "json")); err != nil {
-		if err := ioutil.WriteFile(fmt.Sprintf(basePath, "json"), jsonStr, 0644); err != nil {
+	var saveDiff string
+	basePath := fmt.Sprintf("./%s/content/%d_%s_%s%%s.%%s", user, node.Date, node.Code, node.ID)
+	if _, err := os.Stat(fmt.Sprintf(basePath, "", "json")); err != nil {
+		if err := ioutil.WriteFile(fmt.Sprintf(basePath, "", "json"), jsonStr, 0644); err != nil {
 			log.Fatal(err)
 		}
 		log.Printf("[O] Save content.json `%s`\n", node.Code)
 	} else {
+		orgNodeFile, _ := ioutil.ReadFile(fmt.Sprintf(basePath, "", "json"))
+		var orgNode Node
+		json.Unmarshal(orgNodeFile, &orgNode)
+		saveDiff = saveDiffNodeContent(orgNode, node)
+		if saveDiff != "" {
+			if err := ioutil.WriteFile(
+				fmt.Sprintf(basePath, fmt.Sprintf("_%s", saveDiff), "json"), jsonStr, 0644); err != nil {
+				log.Fatal(err)
+			}
+			log.Println("[Diff] Content `json` existed", node.Code)
+		}
 		log.Println("Content `json` existed", node.Code)
 	}
 
-	if _, err := os.Stat(fmt.Sprintf(basePath, "txt")); err != nil {
-		ioutil.WriteFile(fmt.Sprintf(basePath, "txt"),
-			[]byte(
-				fmt.Sprintf("Code: %s\nCaption: %s\nDate: %s\nDisplaySrc: %s\nID: %s",
-					node.Code, node.Caption, time.Unix(int64(node.Date), 0).Format(time.RFC3339), node.DisplaySrc, node.ID)),
+	var txtContent = func(node Node) []byte {
+		return []byte(
+			fmt.Sprintf("Code: %s\nCaption: %s\nDate: %s\nDisplaySrc: %s\nID: %s",
+				node.Code, node.Caption, time.Unix(int64(node.Date), 0).Format(time.RFC3339), node.DisplaySrc, node.ID))
+	}
+
+	if _, err := os.Stat(fmt.Sprintf(basePath, "", "txt")); err != nil {
+		ioutil.WriteFile(fmt.Sprintf(basePath, "", "txt"),
+			txtContent(node),
 			0644)
 		log.Printf("[O] Save content.txt `%s`\n", node.Code)
 	} else {
+		if saveDiff != "" {
+			if err := ioutil.WriteFile(
+				fmt.Sprintf(basePath,
+					fmt.Sprintf("_%s", saveDiff), "txt"), txtContent(node), 0644); err != nil {
+				log.Fatal(err)
+			}
+			log.Println("[Diff] Content `txt` existed", node.Code)
+		}
 		log.Println("Content `txt` existed", node.Code)
 	}
 }
