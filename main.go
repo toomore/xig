@@ -530,6 +530,11 @@ func main() {
 		case *qLook:
 			quickLook(flag.Arg(0))
 		default:
+			if *delay == 0 {
+				start(flag.Arg(0))
+				return
+			}
+
 			log.Printf("Delay: %ds", *delay)
 			for t := range time.Tick(time.Duration(*delay) * time.Second) {
 				log.Println(t)
