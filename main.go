@@ -531,8 +531,10 @@ func main() {
 			quickLook(flag.Arg(0))
 		default:
 			log.Printf("Delay: %ds", *delay)
-			time.Sleep(time.Duration(*delay) * time.Second)
-			start(flag.Arg(0))
+			for t := range time.Tick(time.Duration(*delay) * time.Second) {
+				log.Println(t)
+				start(flag.Arg(0))
+			}
 		}
 	} else {
 		fmt.Println("xig [options] {username}")
