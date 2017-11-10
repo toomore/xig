@@ -41,22 +41,22 @@ var (
 	showHTTPTrace = flag.Bool("t", false, "Show httptrace info")
 )
 
-func fetch(user string) *http.Response {
+func fetch(user string) (*http.Response, error) {
 	log.Printf("Fetch data from `%s`\n", user)
 
 	req, err := http.NewRequest(
 		"GET", fmt.Sprintf(`https://www.instagram.com/%s/?hl=zh-tw`, user), nil)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	req.Header.Set("User-agent", userAgent)
 	req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
-	return resp
+	return resp, nil
 }
 
 func filter1(html io.Reader) []byte {
@@ -312,21 +312,29 @@ func saveBiography(data profile, wg *sync.WaitGroup) {
 	log.Printf("Save profile `%s` `%x`\n", data.Username, hex)
 }
 
-func fetchRecently(username string) *IGData {
+func fetchRecently(username string) (*IGData, error) {
 	// Get nodes
-	fetchData := fetch(username)
+	fetchData, err := fetch(username)
+	if err != nil {
+		return nil, err
+	}
 	defer fetchData.Body.Close()
 
 	var data = &IGData{}
 	if err := json.Unmarshal(filter1(fetchData.Body), &data); err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
-	return data
+	return data, nil
 }
 
 func start(user string) {
 	prepareBox(user)
-	data := fetchRecently(user)
+
+	data, err := fetchRecently(user)
+	if err != nil {
+		log.Printf("[!] Error: %s\n", err)
+		return
+	}
 
 	var wg = &sync.WaitGroup{}
 	UserData := data.EntryData.ProfilePage[0].User
@@ -371,7 +379,12 @@ func start(user string) {
 }
 
 func quickLook(username string) {
-	data := fetchRecently(username)
+	data, err := fetchRecently(username)
+	if err != nil {
+		log.Printf("[!] Error: %s\n", err)
+		return
+	}
+
 	UserData := data.EntryData.ProfilePage[0].User
 	for i := len(UserData.Media.Nodes) - 1; i >= 0; i-- {
 		node := UserData.Media.Nodes[i]
@@ -387,9 +400,11 @@ DisplaySrc: %s
 }
 
 func prepareBox(user string) {
+	log.Println("[prepareBox] Prepare Box ...")
+	defer log.Println("[prepareBox] Down")
 	for _, path := range [5]string{"", "/img", "/avatar", "/content", "/profile"} {
 		if err := os.Mkdir(fmt.Sprintf("./%s%s", user, path), 0755); err != nil {
-			log.Println(err)
+			log.Printf("[prepareBox] %s\n", err)
 		}
 	}
 }
