@@ -2,15 +2,16 @@ package main
 
 // Node struct
 type Node struct {
-	Caption          string `json:"caption"`
-	Code             string `json:"code"`
-	CommentsDisabled bool   `json:"comments_disabled"`
-	Date             int    `json:"date"`
-	DisplaySrc       string `json:"display_src"`
-	ID               string `json:"id"`
-	IsVideo          bool   `json:"is_video"`
-	ThumbnailSrc     string `json:"thumbnail_src"`
-	Comments         struct {
+	Caption           string              `json:"caption"`
+	Code              string              `json:"code"`
+	CommentsDisabled  bool                `json:"comments_disabled"`
+	Date              int                 `json:"date"`
+	DisplaySrc        string              `json:"display_src"`
+	ID                string              `json:"id"`
+	IsVideo           bool                `json:"is_video"`
+	ThumbnailSrc      string              `json:"thumbnail_src"`
+	ThumbnailResource []ThumbnailResource `json:"thumbnail_resources"`
+	Comments          struct {
 		Count int `json:"Count"`
 	} `json:"comments"`
 	Dimensions struct {
@@ -23,6 +24,13 @@ type Node struct {
 	Owner struct {
 		ID string `json:"id"`
 	} `json:"owner"`
+}
+
+// ThumbnailResource struct
+type ThumbnailResource struct {
+	Src          string `json:"src"`
+	ConfigWidth  int    `json:"config_width"`
+	ConfigHeight int    `json:"config_height"`
 }
 
 type media struct {
